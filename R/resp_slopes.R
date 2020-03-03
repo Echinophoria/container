@@ -1,50 +1,54 @@
-
+#'@export
+#'@importFrom "data.table" "data.table"
+#'@importFrom "MALDIQUANT" "match.closest"
+#'@importFrom "zoo" "match.closest"
+#'@importFrom "zoo" "zoo"
+#'@importFrom "plyr" "summarise"
+#'@import "ggplot2"
+#'
 resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100){
   # This function reads the cvs files from PRESENS new machines used for consecutive close chamber respirometry. It reads the raw data and it converts to DO in mg per litre.
   # Using the information on the interval used it breaks the signal and provides slopes for each respirometry and each channel. Calculates a correction factor from the control channel
   # Recalculations is done from machine phase, and it is only meaningful when external data on salinity or temperature thought more accurate is available. In this case it reads that data from the ctd file.
-  require(MALDIquant)
-  require(zoo)
-  require(plyr)
-  require(ggplot2)
-  
+
+
   a<-read.csv(file, skip=1)
   a<-a[1:nrow(a)-1,]
   a$Date_Time <- strptime(paste(a$Date,' ', a$Time), format = '%m/%d/%Y %H:%M:%S')
   a$Date_Time <- as.POSIXct(a$Date_Time)
   a$delta_t <- as.numeric(levels(a$delta_t))[a$delta_t]  # JANUARY FILES START OVER FROM 11450. previous to that it has a different interval!
-  
+
   #recalculation? (y/n)
   # recalculates from phase to current conditions of temperature and salinity. it will require an external dataset with at least salinity to correct.
   if (recalculate=='y'){
-    
+
     if (is.null(ctd)){
       warning='no external data to recalculate from phase'
       break}
-    
+
     if (min(a$Date_Time)<min(ctd$Date_Time)|max(a$Date_Time)>max(ctd$Date_Time)){
       warning='ctd file does not cover the running time of the respirometry file, first and/or last CTD salinity value is used for date/time not covered by the file'
     }
-    
+
     # reading CTD for salinity and temperature
-    ctd <- ctd 
+    ctd <- ctd
     ctd <- subset(ctd, Press>2)  # CTD is set on superficial waters below 2 mts deep, everything above that is related to CTD manipulation.
     # reducing CTD time coverage to match that of presens file.
     ctd <- subset(ctd, Date_Time>= min(a$Date_Time) & Date_Time<=max(a$Date_Time))
     setattr(ctd, "sorted", "Date_Time")
-    
+
     clm.sal <- which(colnames(a)=='Salinity')  # search for the variable salinity in the presens file and create it if it isn't there
     if (is.null(clm.sal)){
       a$Salinity=0  # creates the variable salinity
       clm.sal <- which(colnames(a)=='Salinity')
     }
-    
+
     clm.tem <- which(colnames(a)=='Temp')  # search for the variable temperature in the presens file and create it if it isn't there
     if (is.null(clm.tem)){
       a$Temp=0  # creates the variable salinity
       clm.tem <- which(colnames(a)=='Temp')
     }
-    
+
     for (i in 1:nrow(a)){
       dt = a[i,ncol(a)]
       y = match.closest(dt, ctd$Date_Time)
@@ -61,19 +65,19 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
     A = tan((a$Cal0+(a$dPhi1*(a$Temp-a$T0)))*pi/180)
     B = 0.0512930699850897+(a$dkSv1*(a$Temp-a$T2nd))
     C = tan(a$Phase*pi/180)
-    
+
     a$Value=(-(C/A*B+C/A*1/a$m*B-a$f1*1/a$m*B-B+a$f1*B)+
              (sqrt(((C/A*B+C/A*1/a$m*B-a$f1*1/a$m*B-B+a$f1*B)^2)-4*(C/A*1/a$m*(B^2))*(C/A-1))))/
       (2*(C/A*1/a$m*(B^2)))
-    
+
   }
-  
+
   # from saturation to mg O2 L. considering salinity, temperature and humidity
-  
+
   # reduce file to important columns
   out <- data.frame(chnl=a$Channel, delta_t=a$delta_t, Date_Time = a$Date_Time, perc_sat = a$Value, temp = a$Temp, sal = a$Salinity, Bp=a$Pressure/10, ID=a$Sensor_Name)
   out$RH = humidity
-  
+
   # from saturation to mgO2/l
   sal_factor <- exp(-out$sal * (0.017674-10.754/(out$temp+273.15)^2))
   DO_st_press <- exp(-139.34411+(1.575701*10^5)/(273.15+out$temp)-(6.642308*10^7)/(273.15+out$temp)^2+(1.2438*10^10)/(273.15+out$temp)^3-(8.621949*10^11)/(273.15+out$temp)^4)
@@ -81,23 +85,23 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
   Theta <- 0.000975-(1.426*10^-5)*out$temp+(6.436*10^-8)*out$temp^2
   Press_factor <- ((out$Bp/101.325)-(VP_RH/101.325))*(1-Theta*(out$Bp/101.325))/(1-(VP_RH/101.325))*(1-Theta)
   out$DO_mg_l <- Press_factor*DO_st_press*sal_factor*out$perc_sat/100
-  
-  
-  
+
+
+
   # calculating respiration rates
   # splitting by channel
   # which channel is the control? skip it for after this.
   channels <- as.numeric(unique(out$chnl))
-  
-  
+
+
   ctrl <- ctrl   # channel for the control
   int <- interval*60 # minutes, interval in hours between start of consecutive respirometries.
   dur <- duration*60 # minutes, time the chambers are closed
-  
+
   RO <- data.frame(slope=0, t_start=0, t_end=0, R2=0, perc_start=0,
                    perc_end=0, Date_Time=out$Date_Time[1], Temp=0, Sal=0,
                    dur=0, chnl=0, ID="Oxy-0.0")
-  
+
   for (i in 1:length(channels)){
     if( i != ctrl){
       c1 <- subset(out, chnl==i)
@@ -131,7 +135,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
           slopes<- subset(slopes, slope<=0)
           qual <- quantile(slopes$R2, 0.95)
           slopes <- subset(slopes, R2>qual)
-          
+
           br <- summarise(.data = slopes,
                         slope  = mean(slope, na.rm=TRUE),
                         R2 = mean(R2, na.rm=TRUE),
@@ -147,18 +151,18 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
           br$ID <- ct$ID[1]
           RO <- rbind(RO, br)
           }
-      
+
     }
   }
-  
+
   RO<-RO[-1,]
-  
+
   if (ctrl==0){
     warning='no control channel is defined, no control corrections are given'
     RO$ox_cor <- NA   # correction factor from the control
   }else{
     RO$ox_cor <- 0   # correction factor from the control
-    
+
     ## extracting control values for correction.
     cc <- subset(out, chnl == ctrl)
     for (i in 1:nrow(RO)){   # is up to the researcher to use or not the correction or calculate others, as these may not be subjet to instrument errors.
@@ -178,15 +182,15 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
       RO$ox_cor[i] <- median(slopes$slope)
     }
   }
-  
+
   out <- data.table(out)
   setattr(out, "sorted", "delta_t")
   c1 <- subset(out, chnl==1)
   brks <-seq(min(c1$delta_t), max(c1$delta_t), 1440)
   lbs =  c1[J(brks), roll="nearest", on='delta_t']
   lbs <- lbs$Date_Time
- 
-  
+
+
   RO_plot <- ggplot()+
     geom_line(data=out, aes(x=delta_t, y=perc_sat))+
     geom_segment(data=RO, aes(x = t_start, xend = t_end, y=perc_start, yend = perc_end), colour='red')+
@@ -194,20 +198,20 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
     ylab('%O2 saturation')+
     facet_grid(chnl~.)+
     ggtitle(file)
-  
+
   dir.create('check_plots')
   pdf(paste('check_plots/', file ,'.pdf', sep=''), width=9, height=6)
   print(RO_plot)
   dev.off()
-  
+
   require(dplyr)
   R_out <- select(RO, chnl, Date_Time, Temp, Sal, slope, R2, ox_cor, perc_start, perc_end, ID )
   names(R_out) <- c('Channel',  "Date_Time", "Temperature", "Salinity", 'RO' , 'R2', 'RO_ctrl'  ,"satO2_1","satO2_2", 'ID')
-  R_out$Date_Time <- as.POSIXct(R_out$Date_Time, origin = "1970-01-01", tz="UTC") 
+  R_out$Date_Time <- as.POSIXct(R_out$Date_Time, origin = "1970-01-01", tz="UTC")
   return(R_out)
 }
 
 
-  
+
 
 

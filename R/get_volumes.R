@@ -1,11 +1,12 @@
+#'@export
 get_volumes <- function(data){
-  # this function reads any output from get_CR file and calculate the vol of each fraction 
+  # this function reads any output from get_CR file and calculate the vol of each fraction
   # it assumes all particles are perfect spheres volume = 4/3 pi R^3
-  
+
   nm <- names(data)[6:(ncol(data)-1)]
   ranges <- strsplit(nm, split = ">", fixed = TRUE)
   vol <- c()
-  
+
   for (i in 1:length(ranges)){
     rg <- ranges[[i]]
     lw <- as.numeric(rg[1])
