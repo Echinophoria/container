@@ -3,7 +3,7 @@
 read_PAMAS <- function (file){
   # this function reads the PAMAS txt files. It returns a data frame with all
   # measurements events by time and by replicate. Provides information on user
-  # profile and measured volume.
+  # profile and measured volume. Calculates particles in each range. i.e. substracts the cumulative
 
   pam <- readLines(file)
   profsline <- grep("ProfileName:\t", pam, value = FALSE) # used profiles
@@ -51,6 +51,23 @@ read_PAMAS <- function (file){
     }
   }
   counts <- counts[,1:(ncol(counts)-7)]
+
+  #calculating numbers per range.
+  nm <- names(counts)
+  n1 <- nm[1]
+  nm <- nm[6:(length(nm))]
+  nm2 <- c(nm,'')
+  nm  <- c('',nm)
+  nm2 <- sub('>', nm2, replacement='')
+  nm <- paste(nm2, nm, sep='')
+  nm <- nm[1:(length(nm))]
+
+  cts <- counts
+  for (i in 7:(ncol(cts))){
+    counts[,i] <- cts[,i-1]-cts[,i]
+  }
+  colnames(counts)[6:(ncol(counts))]=nm
+
   return(counts)
 }
 
