@@ -61,7 +61,7 @@ get_CR <- function(data, control, ctrl_type='mean'){
   ## retention rate (N per minute)
 
   retention_rate <- retain
-  retention_rate[,6:(ncol(retain)-3)]<-retain[6:(ncol(retain)-3)]*retain[,ncol(retain)]
+  retention_rate[,6:(ncol(retain)-3)]<-retain[6:(ncol(retain)-3)]*retain[,(ncol(retain)-2)]
 
   ## retention efficiency (% retained)
   input[,6:(ncol(input)-3)]<-input[,6:(ncol(input)-3)]/input[,3]
