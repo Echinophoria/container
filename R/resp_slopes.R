@@ -1,22 +1,44 @@
 #'@export
 #'@importFrom "data.table" "data.table"
+#'@importFrom "data.table" "J"
 #'@importFrom "MALDIQUANT" "match.closest"
-#'@importFrom "zoo" "match.closest"
+#'@importFrom "zoo" "rollapplyr"
 #'@importFrom "zoo" "zoo"
 #'@importFrom "plyr" "summarise"
+#'@importFrom "dplyr" "select"
 #'@import "ggplot2"
-#'
+
 resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100){
   # This function reads the cvs files from PRESENS new machines used for consecutive close chamber respirometry. It reads the raw data and it converts to DO in mg per litre.
   # Using the information on the interval used it breaks the signal and provides slopes for each respirometry and each channel. Calculates a correction factor from the control channel
-  # Recalculations is done from machine phase, and it is only meaningful when external data on salinity or temperature thought more accurate is available. In this case it reads that data from the ctd file.
+  # Recalculations are done from machine phase, and it is only meaningful when external data on salinity or temperature thought more accurate is available. In this case it reads that data from the ctd file.
 
 
   a<-read.csv(file, skip=1)
   a<-a[1:nrow(a)-1,]
   a$Date_Time <- strptime(paste(a$Date,' ', a$Time), format = '%m/%d/%Y %H:%M:%S')
   a$Date_Time <- as.POSIXct(a$Date_Time)
-  a$delta_t <- as.numeric(levels(a$delta_t))[a$delta_t]  # JANUARY FILES START OVER FROM 11450. previous to that it has a different interval!
+  suppressWarnings(a$delta_t <- as.numeric(levels(a$delta_t))[a$delta_t])
+  channels <- as.numeric(unique(a$Channel))
+
+  time_lm <- summary(lm(a$delta_t~a$Date_Time))   #checking if the file has a continuous delta_t.
+  if (time_lm$r.squared<0.99999){
+    for (i in 1:length(channels)){
+      a_ch <- subset(a, Channel==i)
+      a_ch <- a_ch[order(a_ch$Date_Time),]
+      a_ch$delta_t[1]<- 0
+      for (j in 2:nrow(a_ch)){
+        a_ch$delta_t[j]<-a_ch$delta_t[j-1]+(a_ch$Date_Time[j]-a_ch$Date_Time[j-1])/60
+      }
+    if (!exists('a2')){
+      a2 <- a_ch
+    }else{
+      a2 <- rbind(a2, a_ch)
+    }
+    }
+    a <- a2
+  }
+
 
   #recalculation? (y/n)
   # recalculates from phase to current conditions of temperature and salinity. it will require an external dataset with at least salinity to correct.
@@ -204,7 +226,6 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
   print(RO_plot)
   dev.off()
 
-  require(dplyr)
   R_out <- select(RO, chnl, Date_Time, Temp, Sal, slope, R2, ox_cor, perc_start, perc_end, ID )
   names(R_out) <- c('Channel',  "Date_Time", "Temperature", "Salinity", 'RO' , 'R2', 'RO_ctrl'  ,"satO2_1","satO2_2", 'ID')
   R_out$Date_Time <- as.POSIXct(R_out$Date_Time, origin = "1970-01-01", tz="UTC")
