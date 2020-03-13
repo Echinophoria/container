@@ -1,12 +1,19 @@
 Package: container
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Management and analysis of physiology high frequency measurements
+Version: 0.0.9
+Author: Antonio Agüera
+Maintainer:Antonio Agüera <antonio.aguera@hi.no>
+Description: This package contains functions for the first processing and management of data resulting from high frequency respiration and feeding done at the container at HI Austevoll. 
+    Also to read and integrate data from CTD's and other 
+License: GNU AGPLv3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.0.2
+Imports:
+   MALDIquant,
+   data.table,
+   dplyr,
+   ggplot2,
+   plyr,
+   zoo
