@@ -1,5 +1,4 @@
 #'@export
-#'@importFrom "data.table" "data.table"
 read_CTD <- function(file){
   # reading raw file from CTD and create a searchable data.table
   # variables preserve original file names.
