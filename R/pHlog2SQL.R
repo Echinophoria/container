@@ -34,6 +34,10 @@ pHlog2SQL <- function(file, loc, coord, pw){
   pH$temperature <- pH$temperature/1000
   pH$ph <- pH$ph/1000
 
+  # clean outliers
+  pH <- subset(pH, ph>0 & ph<10)
+  pH[which(pH$light>9999),'light'] <- 9999
+
   # connect to the database
 
   # load the PostgreSQL driver
