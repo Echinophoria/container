@@ -16,4 +16,5 @@ Depends:
    dplyr,
    ggplot2,
    plyr,
-   zoo
+   zoo,
+   RPostgreSQL

@@ -1,3 +1,5 @@
+#'@export
+
 read_pHlog <- function(file){
   # reading raw file from PyroScience pH logger and create a searchable data.table
   # variables preserve original file names.
