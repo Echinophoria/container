@@ -43,10 +43,9 @@ pHlog2SQL <- function(file, loc, coord, pw){
   # load the PostgreSQL driver
   drv <- dbDriver("PostgreSQL")
   # creates a connection to the database
-  con <- dbConnect(drv, dbname="postgres",
-                   host = 'localhost', port=5432,
-                   user = 'LTA_team', password=pw)
-  rm(pw)
+  con <- dbConnect(drv, dbname="LTA_team",
+                   host = 'postgres.hi.no', port=5432,
+                   user = 'lta_team', password='coM7zei.')
 
   # check that CTD table is there
   if(!dbExistsTable(con, 'ph_logger')){

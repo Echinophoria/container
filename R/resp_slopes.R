@@ -6,6 +6,7 @@
 #'@importFrom "plyr" "summarise"
 #'@importFrom "dplyr" "select"
 #'@import "ggplot2"
+#'@import "RPostgreSQL
 
 resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100){
   # This function reads the cvs files from PRESENS new machines used for consecutive close chamber respirometry. It reads the raw data and it converts to DO in mg per litre.
@@ -45,18 +46,34 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
 
     if (is.null(ctd)){
       warning='no external data to recalculate from phase'
+    }else{
+      if(is.data.frame(ctd)){
+          if (min(a$Date_Time)<min(ctd$datetime)|max(a$Date_Time)>max(ctd$datetime)){
+            warning='ctd file does not cover the running time of the respirometry file, first and/or last CTD salinity value is used for date/time not covered by the file'
+          }
+        }
+      if(is.character(ctd)){ # that means is a location in the database
+            # first check that the location is in the database
+            # load the PostgreSQL driver
+            drv <- dbDriver("PostgreSQL")
+            # creates a connection to the database
+            con <- dbConnect(drv, dbname="LTA_team",
+                             host = 'postgres.hi.no', port=5432,
+                             user = 'lta_team', password='coM7zei.')
+            cmd <- paste("SELECT datetime, salinity, temperature FROM ctd WHERE location ='", ctd, "' AND
+                       datetime >='", min(a$Date_Time), "' AND datetime <='",max(a$Date_Time),"'",
+                         sep='')
+
+            ctd <- dbGetQuery(con, cmd)
+      }
       }
 
-    if (min(a$Date_Time)<min(ctd$Date_Time)|max(a$Date_Time)>max(ctd$Date_Time)){
-      warning='ctd file does not cover the running time of the respirometry file, first and/or last CTD salinity value is used for date/time not covered by the file'
-    }
 
     # reading CTD for salinity and temperature.
     ctd <- ctd
-    ctd <- subset(ctd, Press>2)  # CTD is set on superficial waters below 2 mts deep, everything above that is related to CTD manipulation.
     # reducing CTD time coverage to match that of presens file.
-    ctd <- subset(ctd, Date_Time>= min(a$Date_Time) & Date_Time<=max(a$Date_Time))
-    setattr(ctd, "sorted", "Date_Time")
+    ctd <- subset(ctd, datetime>= min(a$Date_Time) & datetime<=max(a$Date_Time))
+    setattr(ctd, "sorted", "datetime")
 
     clm.sal <- which(colnames(a)=='Salinity')  # search for the variable salinity in the presens file and create it if it isn't there
     if (is.null(clm.sal)){
@@ -72,7 +89,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
 
     for (i in 1:nrow(a)){
       dt = a[i,ncol(a)]
-      y = match.closest(dt, ctd$Date_Time)
+      y = match.closest(dt, ctd$datetime)
       # salinity
       if (length(grep('sal', rec_var, value=FALSE))>0){
         a[i,clm.sal]<-ctd[y,3]
