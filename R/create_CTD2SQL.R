@@ -1,6 +1,6 @@
 #'@export
 
-CTD2SQL <- function(file, loc, coord){
+create_CTD2SQL <- function(file, loc, coord){
   # This function store CTD output files in postgreSQL database. It eases the
   # work with several or very large files allowing us to use queries on the data
   # we need at every moment

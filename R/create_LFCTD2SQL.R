@@ -1,7 +1,6 @@
 #'@export
-#'@import "RPostgreSQL"
 
-CTDLF2SQL <- function(file, fluo_threshold, turb_threshold,  pw){
+create_LFCTD2SQL <- function(file, fluo_threshold, turb_threshold,  pw){
   # This function store CTD output files from Lysefjord transects in postgreSQL database. It eases the
   # work with several or very large files allowing us to use queries on the data
   # we need at every moment
