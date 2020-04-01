@@ -23,7 +23,7 @@ read_CTD <- function(file){
     ctd <- select(ctd, Ser, instrument_id, Date, Sal., Cond., Temp, F..µg.l., T..FTU., Density, S..vel., Press)
     names(ctd)[1:11]<-c('Ser','instrument_id','datetime', 'salinity', 'conductivity', 'temperature', 'fluorescence', 'turbidity', 'density', 'sound_velocity', 'pressure')
   }else{ # ctd w/o fluorometer + turbidity
-    ctd <- select(ctd, instrument_id, Date, Sal., Cond., Temp, Density, S..vel., Press)
+    ctd <- select(ctd, Ser, instrument_id, Date, Sal., Cond., Temp, Density, S..vel., Press)
     names(ctd)[1:08]<-c('Ser', 'instrument_id','datetime', 'salinity', 'conductivity', 'temperature', 'density', 'sound_velocity', 'pressure')
   }
   return(ctd)
