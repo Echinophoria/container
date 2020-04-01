@@ -1,6 +1,6 @@
 #'@export
 
-create_LFCTD2SQL <- function(file, fluo_threshold, turb_threshold,  pw){
+create_LFCTD2SQL <- function(file){
   # This function store CTD output files from Lysefjord transects in postgreSQL database. It eases the
   # work with several or very large files allowing us to use queries on the data
   # we need at every moment
@@ -13,20 +13,7 @@ create_LFCTD2SQL <- function(file, fluo_threshold, turb_threshold,  pw){
   ctd <- read_CTD(file)
 
   # delete surface data records
-  ctd <- subset(ctd, pressure>1.2)
-
-
-
-  # apply Fluorescence threshold
-  if(exists('fluo_threshold')){
-    ctd <- subset(ctd, fluorescence <= fluo_threshold)
-  }
-
-  if(exists('turb_threshold')){
-    ctd <- subset(ctd, fluorescence <= turb_threshold)
-  }
-
-
+  ctd <- subset(ctd, pressure>0.2)
 
   series<- ddply(.data = ctd, c("Ser"),summarise,
                  N    = length(pressure),
@@ -45,7 +32,7 @@ create_LFCTD2SQL <- function(file, fluo_threshold, turb_threshold,  pw){
   }
 
   # adding location information
-  locs <- read.table('lysefjord_stations.txt', header=TRUE, sep='\t')
+  locs <- data('lysefjord_stations')
 
   # each date there must be 8 series, one for each location.
   series$location = rep(locs$location, time= (nrow(series)/8))
