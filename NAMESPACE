@@ -2,6 +2,8 @@
 
 export(CTD2SQL)
 export(CTDLF2SQL)
+export(create_CTD2SQL)
+export(create_LFCTD2SQL)
 export(get_CR)
 export(get_volumes)
 export(pHlog2SQL)
