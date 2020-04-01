@@ -25,6 +25,8 @@ create_CTD2SQL <- function(file, loc, coord){
     ctd$latitude <- coord[1]
     ctd$longitude <- coord[2]
   }
+  ctd$Ser <- NULL
+
   return(ctd)
 }
 
