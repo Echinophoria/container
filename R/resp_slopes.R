@@ -237,7 +237,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
     scale_x_continuous(name='Date - time', breaks=brks, labels=lbs, expand=c(0,0))+
     ylab('%O2 saturation')+
     facet_grid(chnl~.)+
-    ggtitle(file)
+    ggtitle(file) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
   dir.create('check_plots')
   pdf(paste('check_plots/', file ,'.pdf', sep=''), width=9, height=6)
