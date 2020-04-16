@@ -194,6 +194,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
   }
 
   RO<-RO[-1,]
+  RO<-subset(RO, !is.na(slope))
 
   if (ctrl==0){
     warning='no control channel is defined, no control corrections are given'
