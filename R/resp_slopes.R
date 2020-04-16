@@ -51,6 +51,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
           if (min(a$Date_Time)<min(ctd$datetime)|max(a$Date_Time)>max(ctd$datetime)){
             warning='ctd file does not cover the running time of the respirometry file, first and/or last CTD salinity value is used for date/time not covered by the file'
           }
+        ctd <- ctd[,c('datetime','salinity','temperature')]
         }
       if(is.character(ctd)){ # that means is a location in the database
             # first check that the location is in the database
@@ -92,11 +93,11 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
       y = match.closest(dt, ctd$datetime)
       # salinity
       if (length(grep('sal', rec_var, value=FALSE))>0){
-        a[i,clm.sal]<-ctd[y,3]
+        a[i,clm.sal]<-ctd[y,2]
       }
       # temperature
       if (length(grep('tem', rec_var, value=FALSE))>0){
-        a[i,clm.tem]<-ctd[y,5]
+        a[i,clm.tem]<-ctd[y,3]
       }
     }
     # recalculate oxygen saturation from phase (based on Presens internal data)
