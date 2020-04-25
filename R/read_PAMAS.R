@@ -27,9 +27,16 @@ read_PAMAS <- function (file){
     prof_vol <- subset(info, line<blocks[i])
     prof_vol <- prof_vol[nrow(prof_vol),]
 
-    blck <- pam[(blocks[i]+2):(blocks[i]+15)]
+    nmeasures <- as.numeric(substr(pam[blocks[i]], nchar(pam[blocks[i]])-1, nchar(pam[blocks[i]]))) # number of measurements per block
+    blck <- pam[(blocks[i]+2):(blocks[i]+nmeasures+2)]
     blck <- strsplit(blck, split = "\t", fixed = TRUE)
-    blck <- as.data.frame(matrix(unlist(blck), ncol = 41, byrow = TRUE),
+    if (length(blck[[1]])==38){ # the old pamas skip labels
+      blck <- pam[(blocks[i]+2):(blocks[i]+nmeasures+3)]
+      blck <- strsplit(blck, split = "\t", fixed = TRUE)
+      blck[[1]] <- c(blck[[1]][1:(which(blck[[1]]=='->')-2)],">29.00", ">30.00",blck[[2]][2:3],blck[[1]][which(blck[[1]]=='->'):38])
+      blck[[2]] <- NULL
+    }
+    blck <- as.data.frame(matrix(unlist(blck), ncol = length(blck[[1]]), byrow = TRUE),
                           stringsAsFactors = FALSE)
     colnames(blck) <- blck[1,]
     blck <- blck[-1,]
@@ -43,7 +50,7 @@ read_PAMAS <- function (file){
     blck <- cbind(chamber_ID, blck)
     colnames(blck)[4]<-'block'
     colnames(blck)[5]<-'Date_Time'
-    blck[,6:41]<-data.frame(lapply(blck[,6:41],as.numeric))
+    blck[,6:ncol(blck)]<-data.frame(lapply(blck[,6:ncol(blck)],as.numeric))
     if (is.null(counts)){
       counts <- blck
     }else{
