@@ -3,7 +3,6 @@
 read_pHlog <- function(file){
   # reading raw file from PyroScience pH logger and create a searchable data.table
   # variables preserve original file names.
-  require(data.table)
   pHlog <- readLines(file, n=25)  # read the first few lines to get header info
   log_name<-grep('#Log Nam', pHlog, value = TRUE)  # the header size
   log_name<-substr(log_name, (gregexpr('\t', log_name)[[1]]+1), nchar(log_name))
