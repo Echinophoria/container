@@ -8,7 +8,7 @@
 #'@import "ggplot2"
 #'@import "RPostgreSQL
 
-resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100){
+resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100, cutime=0){
   # This function reads the cvs files from PRESENS new machines used for consecutive close chamber respirometry. It reads the raw data and it converts to DO in mg per litre.
   # Using the information on the interval used it breaks the signal and provides slopes for each respirometry and each channel. Calculates a correction factor from the control channel
   # Recalculations are done from machine phase, and it is only meaningful when external data on salinity or temperature thought more accurate is available. In this case it reads that data from the ctd file.
@@ -19,6 +19,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
   a$Date_Time <- strptime(paste(a$Date,' ', a$Time), format = '%m/%d/%Y %H:%M:%S')
   a$Date_Time <- as.POSIXct(a$Date_Time)
   a$delta_t <- as.numeric(as.character(a$delta_t))
+  a <- subset(a, delta_t >=cutime)
   channels <- as.numeric(unique(a$Channel))
 
   time_lm <- summary(lm(a$delta_t~a$Date_Time))   #checking if the file has a continuous delta_t.
@@ -65,13 +66,14 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
                        datetime >='", min(a$Date_Time), "' AND datetime <='",max(a$Date_Time),"'",
                          sep='')
 
-            ctd <- dbGetQuery(con, cmd)
+            ctd_file <- dbGetQuery(con, cmd)
+            dbDisconnect(con)
       }
       }
 
 
     # reading CTD for salinity and temperature.
-    ctd <- ctd
+    ctd <- ctd_file
     # reducing CTD time coverage to match that of presens file.
     ctd <- subset(ctd, datetime>= min(a$Date_Time) & datetime<=max(a$Date_Time))
     setattr(ctd, "sorted", "datetime")
@@ -148,7 +150,8 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
       tt<- data.frame(tstart = c(min(c1$delta_t), seq((min(c1$delta_t)+dur),max(c1$delta_t), int)),
                       tend=c(seq((min(c1$delta_t)+dur),max(c1$delta_t), int),max(c1$delta_t)))
       tt <- tt[which((tt$tend-tt$tstart)>=dur),]  # that drops the last one, in case it wasn't complete cycle.
-      tt[2:nrow(tt),1] <- tt[2:nrow(tt),1]+(int-dur)  # we know that in each cycle (except the start one) respirometry start after two hours. Cycle is chamber open -- 2 hours -- chamber close -- 2hours
+      tt[2:nrow(tt),1] <- tt[2:nrow(tt),1]+(int-dur)  # we know that in each cycle (except the start one) respirometry start after three hours. Cycle is chamber open -- 1 hours -- chamber close -- 3hours
+      tt <- tt[which((tt$tend-tt$tstart)>=dur),]  # that drops the last one, in case it wasn't complete cycle.
       for (j in 1:nrow(tt)){
           st <- tt[j,'tstart']
           en <- tt[j,'tend']
