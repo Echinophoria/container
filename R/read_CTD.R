@@ -12,7 +12,7 @@ read_CTD <- function(file){
   hdr<-names(hdr)
   ctd<-read.table(file, skip=hd, sep=';', header=FALSE)
   names(ctd)<-hdr[1:ncol(ctd)]
-  ctd$Date <- strptime(paste(ctd$Date, ctd$Time), format = '%d.%m.%Y %H:%M:%S')
+  ctd$Date <- strptime(paste(ctd$Date, ctd$Time), format = '%d.%m.%Y %H:%M:%S', tz = "UTC")
   ctd$Date <- as.POSIXct(ctd$Date)
   ctd=data.table(ctd) # to make it searchable
 

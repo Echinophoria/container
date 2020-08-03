@@ -44,8 +44,9 @@ read_pHlog <- function(file){
   log<-read.table(file, skip=hd, sep='\t', header=FALSE)
   names(log)<-vars
 
-  log$DateTime <- strptime(log$DateTime, format = '%Y-%m-%d %H:%M:%S')
+  log$DateTime <- strptime(log$DateTime, format = '%Y-%m-%d %H:%M:%S', tz="")  #pH loggers use local timezone
   log$DateTime <- as.POSIXct(log$DateTime)
+  attr(log$DateTime, "tzone") <- "UTC"  # change the time to UTC/GMT to be consistent with the other instruments.
   log=data.table(log) # to make it searchable
   pHlog<-list(log=log, settings=settings, calibration=calibration, variable_units=units)
   return(pHlog)
