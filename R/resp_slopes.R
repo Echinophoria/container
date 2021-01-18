@@ -76,7 +76,8 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
     ctd <- ctd_file
     # reducing CTD time coverage to match that of presens file.
     ctd <- subset(ctd, datetime>= min(a$Date_Time) & datetime<=max(a$Date_Time))
-    setattr(ctd, "sorted", "datetime")
+    ctd <- ctd[order(df$datetime),]
+
 
     clm.sal <- which(colnames(a)=='Salinity')  # search for the variable salinity in the presens file and create it if it isn't there
     if (is.null(clm.sal)){
