@@ -6,7 +6,7 @@
 #'@importFrom "plyr" "summarise"
 #'@importFrom "dplyr" "select"
 #'@import "ggplot2"
-#'@import "RPostgreSQL
+#'@import "RPostgreSQL"
 
 resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n', ctd=NULL, rec_var=c('sal'), humidity=100, cutime=0){
   # This function reads the cvs files from PRESENS new machines used for consecutive close chamber respirometry. It reads the raw data and it converts to DO in mg per litre.

@@ -1,5 +1,6 @@
 #'@export
-#'@importFrom "plyr" "summarise" "robustbase"
+#'@importFrom "plyr" "summarise"
+#'@importFrom "robustbase" "colMedians"
 get_CR <- function(data, control, ctrl_type='mean'){
   # this function estimates the clearance rate by particle size. it needs the
   # pamas readout from function read_PAMAS(), a value or vector with the

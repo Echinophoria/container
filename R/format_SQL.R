@@ -1,3 +1,6 @@
+#'@export
+
+
 format_SQL <- function(ctd){
   ctd$datetime <- paste(as.character(ctd$datetime), "+0", sep='')  # ctd datetime is UTC
 
