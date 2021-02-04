@@ -26,40 +26,55 @@ get_CR <- function(data, control, ctrl_type='mean'){
 
 
     # alternative use of the median between controls (more than 2 or mean when only 2) and apply to all the same value
-    for (i in 1:length(blocks)){
+  bad_blocks=c()
+  for (i in 1:length(blocks)){
       out <- subset(data, sorting==blocks[i])
       ctrl <- out[which(out$chamber_ID==control[1] | out$chamber_ID==control[2]),]
-      #average<-colMeans((ctrl[,7:(ncol(ctrl))-1]))[1:32]
-      median <- colMedians(as.matrix(ctrl[,7:(ncol(ctrl))-1]))[1:32]
+      c2 <- subset(ctrl, flow>100)  # deleting controls that may had insuficient flow.
+      c2 <- subset(c2, c2[,6]>1000)  # if the total counts are too low is because the pamas may been out of sync with arduino
+      zero <- c2[which(c2[,6]<1000),6]
+      if (nrow(c2)==0){ # there is no valid control and the whole block must be dropped.
+        bad_blocks[i] <- blocks[i]
+        median <- colMedians(as.matrix(ctrl[,7:(ncol(ctrl))-1]))[1:32]
+      }else{
+        median <- colMedians(as.matrix(c2[,7:(ncol(c2))-1]))[1:32]
+      }
+      if (length(zero)!=0){ # if one control doesn't measure anything then it is probably out of sync an the whole block must be deleted
+        bad_blocks[i] <- blocks[i]
+      }
       out[,6:37]<-matrix(rep(median, times=nrow(out)), ncol=length(median), byrow=TRUE)
       if (is.null(input)){
         input <- out
       }else{
         input <- rbind(input, out)
       }
-    }
-
+  }
+  bad_blocks <- bad_blocks[which(!is.na(bad_blocks))]
+  input <- input[!input$sorting %in% bad_blocks, ] #deleting bad blocks without controls
+  data <- data[!data$sorting %in% bad_blocks, ] #deleting bad blocks without controls
   input<- input[order(input$Date_Time),]
   rownames(input) <- NULL
   data$sorting=NULL
   input$sorting=NULL
+  data<- data[order(data$Date_Time),]
 
+  # delete rows where particles numbers are too small to be considered a reliable measurements <1000
+  input <- input[which(data$X1.00>1000),]
+  data <-data[which(data$X1.00>1000),]
 
   ## retained particles (N per ml)
-
   retain <- data
-  retain[,6:(ncol(retain)-4)]<-(input[,6:(ncol(retain)-4)]-data[,6:(ncol(retain)-4)])/retain[,3]
+  retain[,6:(ncol(retain)-1)]<-(input[,6:(ncol(retain)-1)]-data[,6:(ncol(retain)-1)])/retain[,3]
 
   ## retention rate (N per minute)
 
   retention_rate <- retain
-  retention_rate[,6:(ncol(retain)-4)]<-retain[6:(ncol(retain)-4)]*retain[,'flow'] # this one has to be kept
+  retention_rate[,6:(ncol(retain)-1)]<-retain[6:(ncol(retain)-1)]*retain[,'flow'] # this one has to be kept
 
   ## retention efficiency (% retained)
-  input[,6:(ncol(input)-4)]<-input[,6:(ncol(input)-4)]/input[,3]  # input as N/ml
+  input[,6:(ncol(input)-1)]<-input[,6:(ncol(input)-1)]/input[,3]  # input as N/ml
   ret_eff <- retain
-  ret_eff[,6:(ncol(retain)-4)] <- retain[6:(ncol(retain)-4)]/input[,6:(ncol(retain)-4)]  # this one too
-
+  ret_eff[,6:(ncol(retain)-1)] <- retain[6:(ncol(retain)-1)]/input[,6:(ncol(retain)-1)]  # this one too
 
   ## clearance rate (ml/min)
 

@@ -13,14 +13,14 @@ upload_CTD <- function(file, loc, user, pw) {
                                    sep='')
   coords <- dbGetQuery(con, commandSQL)
 
-  ctd <- read_CTD(file)
+  #ctd <- file #read_CTD(file)
   ctd$Ser <- NULL
   ctd$location <- loc
 
   ctd$latitude <- coords[1,1]
   ctd$longitude <- coords[1,2]
 
-  ctd <- subset(ctd, pressure>=1.5)
+  #ctd <- subset(ctd, pressure>=1.5)
 
   rows <- format_SQL(ctd)
 
@@ -39,7 +39,6 @@ upload_CTD <- function(file, loc, user, pw) {
   dbDisconnect(con)
   return(info)
 }
-
 
 
 

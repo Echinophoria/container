@@ -19,7 +19,7 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
   a$Date_Time <- strptime(paste(a$Date,' ', a$Time), format = '%m/%d/%Y %H:%M:%S')
   a$Date_Time <- as.POSIXct(a$Date_Time)
   a$delta_t <- as.numeric(as.character(a$delta_t))
-  a <- subset(a, delta_t >=cutime)
+  a <- subset(a, delta_t >=cutime*60)
   channels <- as.numeric(unique(a$Channel))
 
   time_lm <- summary(lm(a$delta_t~a$Date_Time))   #checking if the file has a continuous delta_t.
@@ -75,8 +75,13 @@ resp_slopes <- function (file, ctrl=0, duration=2, interval=4, recalculate='y/n'
     # reading CTD for salinity and temperature.
     ctd <- ctd_file
     # reducing CTD time coverage to match that of presens file.
-    ctd <- subset(ctd, datetime>= min(a$Date_Time) & datetime<=max(a$Date_Time))
-    ctd <- ctd[order(df$datetime),]
+    if(nrow(ctd)==0){  # there are breaks in the CTD so salinity is standardised to 27.5 PSU
+      ctd <- data.frame(datetime = c( min(a$Date_Time), max(a$Date_Time)),salinity = 27.5, temperature=17)
+    }else{
+      ctd <- subset(ctd, datetime>= min(a$Date_Time) & datetime<=max(a$Date_Time))
+      ctd <- ctd[order(ctd$datetime),]
+    }
+
 
 
     clm.sal <- which(colnames(a)=='Salinity')  # search for the variable salinity in the presens file and create it if it isn't there
